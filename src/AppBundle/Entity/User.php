@@ -13,7 +13,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  * @ORM\Table(name="`user`")
  * @UniqueEntity("email")
  * @UniqueEntity("username")
- * @ORM\Entity(repositoryClass="AppBundle\Repository\UsersRepository")
+ * @ORM\Entity(repositoryClass="AppBundle\Repository\UserRepository")
  */
 class User implements UserInterface
 {
@@ -269,22 +269,6 @@ class User implements UserInterface
     /**
      * @return string
      */
-    public function getApiToken(): ?string
-    {
-        return $this->apiToken;
-    }
-
-    /**
-     * @param string $apiToken
-     */
-    public function setApiToken(string $apiToken): void
-    {
-        $this->apiToken = $apiToken;
-    }
-
-    /**
-     * @return string
-     */
     public function getAbout(): ?string
     {
         return $this->about;
@@ -324,7 +308,7 @@ class User implements UserInterface
      * @param mixed $roles
      * @return User
      */
-    public function setRoles($roles)
+    public function setRoles(array $roles): User
     {
         $this->roles = $roles;
         return $this;

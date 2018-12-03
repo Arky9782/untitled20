@@ -10,27 +10,22 @@ namespace AppBundle\Controller;
 
 
 use AppBundle\Entity\User;
-use AppBundle\Service\SerializerManager;
+use AppBundle\Service\UserManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
-use Symfony\Component\Security\Guard\GuardAuthenticatorHandler;
-use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Component\Validator\ValidatorBuilder;
 
 class ApiController extends AbstractController
 {
     /**
      * @Route("/api/login", name="api_login")
      */
-    public function loginAction(Request $request)
+    public function loginAction()
     {
         $user = $this->getUser();
 
@@ -100,5 +95,20 @@ class ApiController extends AbstractController
 
         return $this->json($user, 201);
 
+    }
+
+    /**
+     * @Route("/api/users/age", name="average_users_age")
+     */
+    public function averageUsersAgeAction(UserManager $userManager)
+    {
+        try {
+            $averageUsersAge = $userManager->calculateUsersAverageAge();
+        }
+        catch (\Exception $exception) {
+            return new JsonResponse($exception->getMessage());
+        }
+
+        return new JsonResponse($averageUsersAge);
     }
 }
