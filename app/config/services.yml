@@ -29,6 +29,12 @@ services:
         public: true
         tags: ['controller.service_arguments']
 
+
+    AppBundle\Repository\UserRepository:
+        factory: ['@doctrine.orm.default_entity_manager', getRepository]
+        arguments:
+            - AppBundle\Entity\User
+
     # add more services, or override services that need manual wiring
     # AppBundle\Service\ExampleService:
     #     arguments:

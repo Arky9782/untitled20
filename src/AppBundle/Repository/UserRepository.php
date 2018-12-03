@@ -10,10 +10,12 @@ namespace AppBundle\Repository;
  */
 class UserRepository extends \Doctrine\ORM\EntityRepository
 {
-    public function findAllUsersWithBirthDate(): ?array
+    public function findAllUsersWithBirthDateByDate($date): ?array
     {
         $query = $this->createQueryBuilder('u')
-            ->where('u.birthdate is not null')
+            ->where('u.birthDate is not null')
+            ->andWhere('u.createdAt >= :date')
+            ->setParameter('date', new \DateTime($date), \Doctrine\DBAL\Types\Type::DATETIME)
             ->getQuery();
 
         return $query->getResult();

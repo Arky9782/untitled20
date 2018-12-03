@@ -2,55 +2,56 @@
 
 namespace AppBundle\Service;
 
-use AppBundle\Repository\UserRepository;
+use AppBundle\Entity\User;
 
 class UserManager
 {
-    private $repository;
-
-    public function __construct(UserRepository $repository)
-    {
-        $this->repository = $repository;
-    }
-
-    public function repository(): UserRepository
-    {
-        return $this->repository;
-    }
 
 
     /**
+     * @param array $birhDates
+     * @return array
      * @throws \Exception
      */
-    public function getUsersAge(): array
+    private function getUsersAgeByBirthDates(array $birhDates): array
     {
-        $users = $this->repository->findAllUsersWithBirthDate();
-
-        if (!$users) {
-            throw new \Exception('Cant get users age, no users with filled birth date found');
-        }
-
         $age = [];
-        $currentDate = (new \DateTime())->format('Y - m - d');
-        foreach ($users as $user)
+        $currentDate = new \DateTime();
+        foreach ($birhDates as $birth)
         {
-            $birthDate = $user->getBirthDate();
-
-            $age = $currentDate - $birthDate;
+            $age[] = $currentDate->diff(new \DateTime($birth))->y;
         }
 
         return $age;
     }
 
+
     /**
+     * @param array $users
      * @return float|int
      * @throws \Exception
      */
-    public function calculateUsersAverageAge()
+    public function calculateUsersAverageAge(array $users)
     {
-        $usersAge = $this->getUsersAge();
+        $usersAge = $this->getUsersAgeByBirthDates($this->getUsersBirthDates($users));
 
-        return array_sum($usersAge)/count($usersAge);
+        return array_sum($usersAge) / count($usersAge);
+    }
+
+
+    /**
+     * @param User[] $users
+     * @return array
+     */
+    public function getUsersBirthDates(array $users)
+    {
+        $birthDates = [];
+        foreach ($users as $user)
+        {
+            $birthDates[] = $user->getBirthDate();
+        }
+
+        return $birthDates;
     }
 
 

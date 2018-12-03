@@ -6,6 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Users
@@ -23,6 +24,7 @@ class User implements UserInterface
      * @ORM\Column(name="id", type="integer")
      * @ORM\Id
      * @ORM\GeneratedValue(strategy="AUTO")
+     * @Groups("user_info")
      */
     private $id;
 
@@ -34,8 +36,15 @@ class User implements UserInterface
      *     min="2",
      *     max="15"
      * )
+     * @Groups("user_info")
      */
     private $firstName;
+
+    /**
+     * @ORM\Column(name="created_at", type="datetime", nullable=true)
+     * @Groups("user_info")
+     */
+    private $createdAt;
 
     /**
      * @var string
@@ -46,6 +55,7 @@ class User implements UserInterface
      *     min="2",
      *     max="20"
      * )
+     * @Groups("user_info")
      */
     private $lastName;
 
@@ -59,6 +69,7 @@ class User implements UserInterface
      * )
      * @Assert\Email()
      * @Assert\NotBlank()
+     * @Groups("user_info")
      */
     private $email;
 
@@ -66,6 +77,7 @@ class User implements UserInterface
      * @var \DateTime
      *
      * @ORM\Column(name="birth_date", type="date", nullable=true)
+     * @Groups("user_info")
      */
     private $birthDate;
 
@@ -73,6 +85,7 @@ class User implements UserInterface
      * @var string
      *
      * @ORM\Column(name="about", type="text", nullable=true)
+     * @Groups("user_info")
      */
     private $about;
 
@@ -98,13 +111,20 @@ class User implements UserInterface
      * )
      *
      * @Assert\NotBlank()
+     * @Groups("user_info")
      */
     private $username;
 
     /**
      * @ORM\Column(name="roles", type="json_array", nullable=true)
+     * @Groups("user_info")
      */
     private $roles;
+
+    public function __construct()
+    {
+        $this->createdAt ?? $this->createdAt = new \DateTime('now');
+    }
 
     /**
      * Get id
@@ -290,7 +310,7 @@ class User implements UserInterface
      * @param \DateTime $birthDate
      * @return User
      */
-    public function setBirthDate(\DateTime $birthDate): User
+    public function setBirthDate(\DateTimeInterface $birthDate): User
     {
         $this->birthDate = $birthDate;
         return $this;
@@ -299,9 +319,9 @@ class User implements UserInterface
     /**
      * @return \DateTime
      */
-    public function getBirthDate(): ?\DateTime
+    public function getBirthDate(): ?string
     {
-        return $this->birthDate;
+        return $this->birthDate !== null ? $this->birthDate->format('Y-m-d') : null;
     }
 
     /**
@@ -312,6 +332,14 @@ class User implements UserInterface
     {
         $this->roles = $roles;
         return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCreatedAt(): ?string
+    {
+        return $this->createdAt !== null ? $this->createdAt->format('Y-m-d') : null;
     }
 }
 

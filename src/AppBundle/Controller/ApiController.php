@@ -10,37 +10,49 @@ namespace AppBundle\Controller;
 
 
 use AppBundle\Entity\User;
+use AppBundle\Repository\UserRepository;
+use AppBundle\Service\SerializerService;
 use AppBundle\Service\UserManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Constraints\Date;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 
+/**
+ * @IsGranted("ROLE_USER")
+ */
 class ApiController extends AbstractController
 {
     /**
-     * @Route("/api/login", name="api_login")
+     * @Route(
+     *     "/api/user/login", name="api_login",
+     *     defaults={"_format": "json"}
+     * )
+     * @IsGranted("ROLE_ADMIN")
      */
     public function loginAction()
     {
-        $user = $this->getUser();
-
-        return $this->json([
-            'username' => $user->getUsername(),
-            'password' => $user->getPassword(),
-        ]);
+        return new Response();
     }
 
     /**
-     * @Route("/api/{id}/edit", name="user_edit")
+     * @Route(
+     *     "/api/user/{id}/edit",
+     *     name="user_edit",
+     *     defaults={"_format": "json"},
+     * )"
+     *
      */
-    public function editAction(User $user, Request $request, SerializerInterface $serializer, EntityManagerInterface $entityManager, ValidatorInterface $validator)
+    public function editAction(User $user, Request $request, SerializerService $serializerService, EntityManagerInterface $entityManager, ValidatorInterface $validator)
     {
-        $user = $serializer->deserialize($request->getContent(), User::class, 'json', ['object_to_populate' => $user]);
+        $user = $serializerService->getSerializer()->deserialize($request->getContent(), User::class, 'json', ['object_to_populate' => $user]);
 
         $errors = $validator->validate($user);
 
@@ -53,31 +65,33 @@ class ApiController extends AbstractController
         $entityManager->persist($user);
         $entityManager->flush();
 
-        return $this->json($user, 201);
+        return $this->redirectToRoute("user_info", ['id' => $user->getId()]);
 
     }
 
     /**
- * @Route("/api/{id}/info", name="user_info")
- */
-    public function infoAction(User $user)
-    {
-        return $this->json([
-            'username' => $user->getUsername(),
-            'first_name' => $user->getFirstName(),
-            'last_name' => $user->getLastName(),
-            'about' => $user->getAbout(),
-            'birth_date' => $user->getBirthDate()
-        ]);
-    }
-
-
-    /**
-     * @Route("/api/create", name="user_create")
+     * @Route(
+     *     "/api/user/{id}/info",
+     *      name="user_info",
+     *     defaults={"_format": "json"}
+     * )
      */
-    public function createAction(Request $request, SerializerInterface $serializer, EntityManagerInterface $entityManager, ValidatorInterface $validator, UserPasswordEncoderInterface $passwordEncoder)
+    public function infoAction(User $user, SerializerInterface $serializer)
     {
-        $user = $serializer->deserialize($request->getContent(), User::class, 'json');
+        return new Response($serializer->serialize($user, 'json', ['groups' => ['user_info']]));
+    }
+
+
+    /**
+     * @Route(
+     *     "/api/user/create",
+     *     name="user_create",
+     *     defaults={"_format": "json"}
+     * )
+     */
+    public function createAction(Request $request, SerializerService $serializerService, EntityManagerInterface $entityManager, ValidatorInterface $validator, UserPasswordEncoderInterface $passwordEncoder)
+    {
+        $user = $serializerService->getSerializer()->deserialize($request->getContent(), User::class, 'json');
 
         $errors = $validator->validate($user);
 
@@ -93,22 +107,35 @@ class ApiController extends AbstractController
         $entityManager->persist($user);
         $entityManager->flush();
 
-        return $this->json($user, 201);
+        return $this->redirectToRoute("user_info", ['id' => $user->getId()]);
 
     }
 
     /**
-     * @Route("/api/users/age", name="average_users_age")
+     * @Route(
+     *     "/api/users/age",
+     *      name="average_users_age",
+     *     defaults={"_format": "json"}
+     * )
+     * @IsGranted("ROLE_ADMIN")
      */
-    public function averageUsersAgeAction(UserManager $userManager)
+    public function averageUsersAgeAction(Request $request, UserManager $userManager, UserRepository $userRepository, ValidatorInterface $validator, SerializerInterface $serializer)
     {
-        try {
-            $averageUsersAge = $userManager->calculateUsersAverageAge();
-        }
-        catch (\Exception $exception) {
-            return new JsonResponse($exception->getMessage());
+        $data = $serializer->decode($request->getContent(), 'json');
+
+        $errors = $validator->validate($data['from'], new Date());
+
+        if (count($errors) > 0)
+        {
+            $errorsString = (string) $errors;
+
+            return new Response($errorsString);
         }
 
-        return new JsonResponse($averageUsersAge);
+        $users = $userRepository->findAllUsersWithBirthDateByDate($data['from']);
+
+        $averageUsersAge = $userManager->calculateUsersAverageAge($users);
+
+        return new JsonResponse(['result' => $averageUsersAge]);
     }
 }
