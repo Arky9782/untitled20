@@ -35,7 +35,6 @@ class ApiController extends AbstractController
      *     "/api/user/login", name="api_login",
      *     defaults={"_format": "json"}
      * )
-     * @IsGranted("ROLE_ADMIN")
      */
     public function loginAction()
     {
@@ -47,7 +46,7 @@ class ApiController extends AbstractController
      *     "/api/user/{id}/edit",
      *     name="user_edit",
      *     defaults={"_format": "json"},
-     * )"
+     * )
      *
      */
     public function editAction(User $user, Request $request, SerializerService $serializerService, EntityManagerInterface $entityManager, ValidatorInterface $validator)
